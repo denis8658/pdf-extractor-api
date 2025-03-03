@@ -4,46 +4,66 @@ const pdfParse = require("pdf-parse");
 const cors = require("cors");
 
 const app = express();
-const upload = multer(); // Configuração do multer para processar arquivos
+const upload = multer();
 
-app.use(cors()); // Permite acesso de outras origens, como FlutterFlow
+app.use(cors());
 app.use(express.json());
 
 console.log("🚀 Inicializando API...");
 
-// Rota de teste para verificar se a API está rodando
-app.get("/", (req, res) => {
-  console.log("✅ Rota '/' acessada - API está rodando.");
-  res.send("🚀 API de Extração de Texto de PDF está rodando!");
-});
+// Função para identificar as seções dinamicamente
+function extractSections(text) {
+  const regexSections = /(\b[A-Z0-9-]+\b)([\s\S]*?)(?=\b[A-Z0-9-]+\b|$)/g;
+  let matches;
+  let extractedData = [];
 
-// Rota para upload e extração de texto do PDF
+  while ((matches = regexSections.exec(text)) !== null) {
+    const sectionId = matches[1]; // ID da seção
+    const sectionContent = matches[2]; // Conteúdo da seção
+
+    // Expressões Regulares para capturar as informações
+    const larguraMatch = /Largura\s*:\s*(\d+)/.exec(sectionContent);
+    const alturaMatch = /Altura\s*:\s*(\d+)/.exec(sectionContent);
+    const ambienteMatch = /Ambiente\s*:\s*([\w\s]+)/.exec(sectionContent);
+    const qtdMatch = /Qtd\s*:\s*(\d+)/.exec(sectionContent);
+    const vidroMatch = /Vidro\s*:\s*([\s\S]*?)(?=\n|$)/.exec(sectionContent);
+    const infoMatch = /Informações\s*:\s*([\s\S]*?)(?=\n|$)/.exec(sectionContent);
+
+    // Adiciona ao array de saída
+    extractedData.push({
+      ID: sectionId,
+      Largura: larguraMatch ? larguraMatch[1] : "Não encontrado",
+      Altura: alturaMatch ? alturaMatch[1] : "Não encontrado",
+      Ambiente: ambienteMatch ? ambienteMatch[1].trim() : "Não encontrado",
+      Quantidade: qtdMatch ? qtdMatch[1] : "Não encontrado",
+      Vidro: vidroMatch ? vidroMatch[1].trim() : "Não encontrado",
+      Informações: infoMatch ? infoMatch[1].trim() : "Não encontrado",
+    });
+  }
+
+  return extractedData;
+}
+
+// Rota para upload e extração dos dados
 app.post("/upload", upload.single("file"), async (req, res) => {
-  console.log("📥 Recebendo requisição POST em /upload...");
-
-  // Logs para verificar os dados recebidos
-  console.log("🔹 Headers recebidos:", req.headers);
-  console.log("🔹 Body recebido:", req.body);
-  console.log("🔹 Arquivo recebido:", req.file ? req.file.originalname : "Nenhum arquivo");
-
   try {
     if (!req.file) {
-      console.log("❌ Nenhum arquivo foi enviado!");
       return res.status(400).json({ error: "Nenhum arquivo enviado." });
     }
 
-    // Processar o PDF
     console.log("🔄 Processando arquivo PDF...");
-    const pdfText = await pdfParse(req.file.buffer);
+    const pdfData = await pdfParse(req.file.buffer);
+    console.log(pdfData.text); // Log do texto extraído
+    const extractedSections = extractSections(pdfData.text);
+    
     console.log("✅ PDF processado com sucesso!");
-
-    res.json({ text: pdfText.text });
+    res.json({ sections: extractedSections });
   } catch (error) {
     console.error("⚠️ Erro ao processar o PDF:", error.message);
     res.status(500).json({ error: "Erro ao processar o PDF: " + error.message });
   }
 });
 
-// Inicia o servidor na porta 5000
+// Inicia o servidor
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
