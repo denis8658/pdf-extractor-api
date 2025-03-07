@@ -67,7 +67,7 @@ function extractSections(text) {
       Ambiente: ambiente,
       Quantidade: quantidade,
       Vidro: vidro,
-      Informações: informacoes,
+      Informacoes: informacoes,
     });
   }
 
