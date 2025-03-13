@@ -49,7 +49,7 @@ function extractSections(text) {
     const ambienteMatch = /Ambiente\s*[:=]?\s*([\w\s]+)/i.exec(sectionContent);
     const qtdMatch = /Qtd\s*[:=]?\s*(\d+)/i.exec(sectionContent);
     const vidroMatch = /Vidro\s*[:=]?\s*([\s\S]*?)(?=\n|$)/i.exec(sectionContent);
-    const infoMatch = /Informações\s*[:=]?\s*([\s\S]*?)(?=\n|$)/i.exec(sectionContent);
+    const infoMatch = /Informacoes\s*[:=]?\s*([\s\S]*?)(?=\n|$)/i.exec(sectionContent);
 
     // **Atribui os valores extraídos**
     if (larguraMatch) largura = larguraMatch[1];
@@ -67,7 +67,7 @@ function extractSections(text) {
       Ambiente: ambiente,
       Quantidade: quantidade,
       Vidro: vidro,
-      Informações: informacoes,
+      Informacoes: informacoes,
     });
   }
 
