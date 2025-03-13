@@ -43,9 +43,9 @@ function extractSections(text) {
     let vidro = "Não encontrado";
     let informacoes = "Não encontrado";
 
-    // **Expressões Regulares melhoradas**
+    // **Expressões Regulares para capturar os dados**
     const larguraMatch = /Largura\s*[:=]?\s*(\d+)/i.exec(sectionContent);
-    const alturaMatch = /Altura\s*[:=]?\s*(\d+\s*\d*)/i.exec(sectionContent);  // <- Atualizado para pegar "120 0"
+    const alturaMatch = /Altura\s*[:=]?\s*(\d+\s*\d*)/i.exec(sectionContent);
     const ambienteMatch = /Ambiente\s*[:=]?\s*([\w\s]+)/i.exec(sectionContent);
     const qtdMatch = /Qtd\s*[:=]?\s*(\d+)/i.exec(sectionContent);
     const vidroMatch = /Vidro\s*[:=]?\s*([\s\S]*?)(?=\n|$)/i.exec(sectionContent);
@@ -67,7 +67,7 @@ function extractSections(text) {
       Ambiente: ambiente,
       Quantidade: quantidade,
       Vidro: vidro,
-      Informacoes: informacoes,
+      Informações: informacoes,
     });
   }
 
@@ -86,7 +86,9 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     const extractedSections = extractSections(pdfData.text);
 
     console.log("✅ PDF processado com sucesso!");
-    res.json({ sections: extractedSections });
+
+    // 🔹 Agora a resposta retorna diretamente o array, sem a chave "sections"
+    res.json(extractedSections);
   } catch (error) {
     console.error("⚠️ Erro ao processar o PDF:", error.message);
     res.status(500).json({ error: "Erro ao processar o PDF: " + error.message });
