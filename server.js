@@ -20,6 +20,9 @@ app.use(express.json());
 
 console.log("🚀 Inicializando API...");
 
+// **Armazena temporariamente a resposta do último upload**
+let lastProcessedData = null;
+
 // **Função para extrair seções corretamente**
 function extractSections(text) {
   text = text.replace(/\n/g, " "); // Remove quebras de linha para facilitar o regex
@@ -35,7 +38,6 @@ function extractSections(text) {
 
     console.log(`\n🔍 Processando seção: ${sectionId}\n${sectionContent}\n`);
 
-    // **Inicializa valores padrão**
     let largura = "Não encontrado";
     let altura = "Não encontrado";
     let ambiente = "Não encontrado";
@@ -43,7 +45,6 @@ function extractSections(text) {
     let vidro = "Não encontrado";
     let informacoes = "Não encontrado";
 
-    // **Expressões Regulares para capturar os dados**
     const larguraMatch = /Largura\s*[:=]?\s*(\d+)/i.exec(sectionContent);
     const alturaMatch = /Altura\s*[:=]?\s*(\d+\s*\d*)/i.exec(sectionContent);
     const ambienteMatch = /Ambiente\s*[:=]?\s*([\w\s]+)/i.exec(sectionContent);
@@ -51,15 +52,13 @@ function extractSections(text) {
     const vidroMatch = /Vidro\s*[:=]?\s*([\s\S]*?)(?=\n|$)/i.exec(sectionContent);
     const infoMatch = /Informacoes\s*[:=]?\s*([\s\S]*?)(?=\n|$)/i.exec(sectionContent);
 
-    // **Atribui os valores extraídos**
     if (larguraMatch) largura = larguraMatch[1];
-    if (alturaMatch) altura = alturaMatch[1].replace(/\s/g, ""); // Remove espaços entre números
+    if (alturaMatch) altura = alturaMatch[1].replace(/\s/g, ""); 
     if (ambienteMatch) ambiente = ambienteMatch[1].trim();
     if (qtdMatch) quantidade = qtdMatch[1];
     if (vidroMatch) vidro = vidroMatch[1].trim();
     if (infoMatch) informacoes = infoMatch[1].trim();
 
-    // **Adiciona ao array final**
     extractedData.push({
       ID: sectionId,
       Largura: largura,
@@ -87,12 +86,22 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
     console.log("✅ PDF processado com sucesso!");
 
-    // 🔹 Agora a resposta retorna diretamente o array, sem a chave "sections"
+    // 🔹 Armazena temporariamente a resposta
+    lastProcessedData = extractedSections;
+
     res.json(extractedSections);
   } catch (error) {
     console.error("⚠️ Erro ao processar o PDF:", error.message);
     res.status(500).json({ error: "Erro ao processar o PDF: " + error.message });
   }
+});
+
+// **Nova Rota GET para retornar os dados armazenados**
+app.get("/returnjson", (req, res) => {
+  if (!lastProcessedData) {
+    return res.status(404).json({ error: "Nenhum dado processado ainda." });
+  }
+  res.json(lastProcessedData);
 });
 
 // **Inicia o servidor**
